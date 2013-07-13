@@ -1,11 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using System.IO;
+using System.Threading.Tasks;
 
 namespace Server
 {
     public interface IDataSetReader
     {
-        Task Init();
-        byte[] GetMasterRecords();
-        byte[] GetDetailsRecords();
+        Stream GetMasterRecords();
+        Stream GetDetailsRecords();
     }
 }

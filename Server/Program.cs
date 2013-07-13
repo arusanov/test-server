@@ -20,8 +20,6 @@ namespace Server
         private static async Task Init()
         {
             var dataSetReader = new DataSetReader(@".\DataSets\master.txt", @".\DataSets\details.txt");
-            Logger.Debug("reading datasets");
-            await dataSetReader.Init();
             var socketServer = new SocketServer(new IPEndPoint(IPAddress.Any, 3333),dataSetReader);
             await socketServer.Listen();
         }

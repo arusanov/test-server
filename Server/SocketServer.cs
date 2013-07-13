@@ -32,7 +32,7 @@ namespace Server
                 if (tcpClient != null)
                 {
                     _logger.Debug("client connected");
-                    await ProcessClient(tcpClient);
+                    ProcessClient(tcpClient);//Run task as async 
                 }
             }
 
@@ -71,14 +71,17 @@ namespace Server
 
                 }
             }
+            _logger.Debug("client closed");
             client.Close();
         }
 
-        private async Task WriteData(Stream stream, byte[] data)
+        private async Task WriteData(Stream stream, Stream dataToWrite)
         {
-            var length = BitConverter.GetBytes(data.Length);
+            _logger.Debug("writing data to client");
+            var length = BitConverter.GetBytes(dataToWrite.Length);
             await stream.WriteAsync(length, 0, length.Length);
-            await stream.WriteAsync(data, 0, data.Length);
+            await dataToWrite.CopyToAsync(stream);
+            _logger.Debug("writing data to client completed");
         }
 
         public void Stop()

@@ -9,8 +9,7 @@ namespace Server
     {
         protected string MasterRecordsFile { get; set; }
         protected string DetailsRecordsFile { get; set; }
-        private byte[] MasterRecordsData { get; set; }
-        private byte[] DetailsRecordsData { get; set; }
+
 
         public DataSetReader(string masterRecordsFile, string detailsRecordsFile)
         {
@@ -18,28 +17,15 @@ namespace Server
             DetailsRecordsFile = detailsRecordsFile;
         }
 
-        public async Task Init()
+
+        public Stream GetMasterRecords()
         {
-            MasterRecordsData = await ReadDataFromFile(MasterRecordsFile);
-            DetailsRecordsData = await ReadDataFromFile(DetailsRecordsFile);
+            return File.Open(MasterRecordsFile,FileMode.Open,FileAccess.Read,FileShare.Read);
         }
 
-        private async Task<byte[]> ReadDataFromFile(string file)
+        public Stream GetDetailsRecords()
         {
-            using (var reader = new StreamReader(file))
-            {
-                return Encoding.UTF8.GetBytes(await reader.ReadToEndAsync());
-            }
-        }
-
-        public byte[] GetMasterRecords()
-        {
-            return MasterRecordsData;
-        }
-
-        public byte[] GetDetailsRecords()
-        {
-            return DetailsRecordsData;
+            return File.Open(DetailsRecordsFile, FileMode.Open, FileAccess.Read, FileShare.Read);
         }
     }
 }

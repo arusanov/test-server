@@ -11,6 +11,8 @@ namespace Client
 {
     class Program
     {
+        private static DataSetDbService _dbService;
+
         static void Main(string[] args)
         {
             var dataSetType = DataSetType.Both;
@@ -18,21 +20,21 @@ namespace Client
             {
                 Enum.TryParse(args[0], true, out dataSetType);
             }
+            _dbService = new DataSetDbService();
             Task.WaitAll(Init(dataSetType));
         }
 
         private static async Task Init(DataSetType dataSetType)
         {
             var client = new DataSetClient(new IPEndPoint(IPAddress.Loopback, 3333));
-            var sets = await client.QueryServer(dataSetType);
-            var dbService = new DataSetDbService();
-            foreach (var set in sets)
-            {
-                dbService.SaveDataSet(set.Key,set.Value);
-            }
-            //yohoho and a bottle of rum!
-            //Push it to the db!
 
+            client.OnDataSetLinesRecieved += client_OnDataSetLinesRecieved;
+            var sets = await client.QueryServer(dataSetType);
+        }
+
+        static void client_OnDataSetLinesRecieved(DataSetType dataSetType, string lines)
+        {
+            _dbService.SaveDataSet(dataSetType, lines);
         }
     }
 }

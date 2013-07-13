@@ -33,11 +33,10 @@ namespace Client.DAO
         private readonly Regex _parseRegex = new Regex(@"(?'id'\d+),""(?'name'[^""]+)",
             RegexOptions.Singleline | RegexOptions.Compiled);
 
-        public void SaveDataSet(DataSetType dataSetType, byte[] data)
+        public void SaveDataSet(DataSetType dataSetType, string dataString)
         {
             //Parse data
             var dataSetData = new Dictionary<int, string>();
-            var dataString = Encoding.UTF8.GetString(data);
             using (var dataSetContext = new DataSets())
             {
                 if (dataSetType == DataSetType.Master)
@@ -87,7 +86,7 @@ namespace Client.DAO
             {
                 if (upsertResult.Action == "INSERT")
                 {
-                    _logger.Warn("master entry for details entry '{1}' with id={0} wasn't present in db",
+                    _logger.Warn("details entry '{1}' with MasterId={0} wasn't present in db",
                         upsertResult.MasterRecordId, upsertResult.Name);
                 }
             }
@@ -95,7 +94,7 @@ namespace Client.DAO
 
         private void SaveMasterDataSet(DataSets dataSetContext, IEnumerable<MasterRecord> masterRecords)
         {
-            var upsertResults = dataSetContext.UpsertMany<MasterRecord,UpsertMaserData>(masterRecords).Identity(x=>x.Id).Query();
+            var upsertResults = dataSetContext.UpsertMany<MasterRecord,UpsertMaserData>(masterRecords).Identity(x=>x.Id).Query().ToList();
             foreach (var upsertResult in upsertResults.Where(x=>x.Action=="INSERT"))
             {
                 _logger.Warn("master entry with id={0} wasn't present in db", upsertResult.Id);
