@@ -2,7 +2,6 @@
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 using NLog;
 
@@ -12,10 +11,10 @@ namespace Server
     {
         private readonly IDataSetReader _dataSetReader;
         private readonly TcpListener _listener;
-        private bool _isStarted;
         private readonly Logger _logger = LogManager.GetLogger("socketServer");
+        private bool _isStarted;
 
-        public SocketServer(IPEndPoint ipEndPoint,IDataSetReader dataSetReader)
+        public SocketServer(IPEndPoint ipEndPoint, IDataSetReader dataSetReader)
         {
             if (dataSetReader == null) throw new ArgumentNullException("dataSetReader");
             _dataSetReader = dataSetReader;
@@ -28,14 +27,13 @@ namespace Server
             _listener.Start();
             while (_isStarted)
             {
-                var tcpClient = await _listener.AcceptTcpClientAsync();
+                TcpClient tcpClient = await _listener.AcceptTcpClientAsync();
                 if (tcpClient != null)
                 {
                     _logger.Debug("client connected");
-                    ProcessClient(tcpClient);//Run task as async 
+                    ProcessClient(tcpClient); //Run task as async 
                 }
             }
-
         }
 
         private async Task ProcessClient(TcpClient client)
@@ -45,9 +43,9 @@ namespace Server
             // 1 - only details
             // 2 - both
             var commandBuffer = new Byte[1];
-            using (var stream = client.GetStream())
+            using (NetworkStream stream = client.GetStream())
             {
-                var readed = await stream.ReadAsync(commandBuffer, 0, commandBuffer.Length);
+                int readed = await stream.ReadAsync(commandBuffer, 0, commandBuffer.Length);
                 if (readed == commandBuffer.Length)
                 {
                     //We got correct command
@@ -61,14 +59,13 @@ namespace Server
                         case 1:
                             //Write master
                             await WriteData(stream, _dataSetReader.GetDetailsRecords());
-                            break; 
+                            break;
                         case 2:
                             //Write master
                             await WriteData(stream, _dataSetReader.GetMasterRecords());
                             await WriteData(stream, _dataSetReader.GetDetailsRecords());
                             break;
                     }
-
                 }
             }
             _logger.Debug("client closed");
@@ -78,7 +75,7 @@ namespace Server
         private async Task WriteData(Stream stream, Stream dataToWrite)
         {
             _logger.Debug("writing data to client");
-            var length = BitConverter.GetBytes(dataToWrite.Length);
+            byte[] length = BitConverter.GetBytes(dataToWrite.Length);
             await stream.WriteAsync(length, 0, length.Length);
             await dataToWrite.CopyToAsync(stream);
             _logger.Debug("writing data to client completed");

@@ -1,29 +1,41 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
 
 namespace Client.DAO.Models
 {
-    public class MasterRecord
+    public class MasterRecord : IEquatable<MasterRecord>
     {
-        protected bool Equals(MasterRecord other)
+        public long Id { get; set; }
+
+        public string Name { get; set; }
+
+        public bool Equals(MasterRecord other)
         {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
             return Id == other.Id;
         }
 
         public override int GetHashCode()
         {
-            return Id;
+            return Id.GetHashCode();
         }
 
-        public int Id { get; set; }
+        public static bool operator ==(MasterRecord left, MasterRecord right)
+        {
+            return Equals(left, right);
+        }
 
-        [Required]
-        public string Name { get; set; }
+        public static bool operator !=(MasterRecord left, MasterRecord right)
+        {
+            return !Equals(left, right);
+        }
+
 
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
+            if (obj.GetType() != GetType()) return false;
             return Equals((MasterRecord) obj);
         }
     }

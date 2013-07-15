@@ -26,7 +26,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\bin\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -43,6 +43,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.Entity" />
     <Reference Include="System.Transactions" />
@@ -54,16 +55,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DAO\DataSetDbService.cs" />
-    <Compile Include="DAO\DataSets.cs" />
-    <Compile Include="DAO\Extensions\EFExtensions.cs" />
     <Compile Include="DAO\Models\DetailsRecord.cs" />
     <Compile Include="DAO\Models\MasterRecord.cs" />
     <Compile Include="DataSetClient.cs" />
-    <Compile Include="Migrations\201307121506408_Initial.cs" />
-    <Compile Include="Migrations\201307121506408_Initial.Designer.cs">
-      <DependentUpon>201307121506408_Initial.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\Configuration.cs" />
+    <Compile Include="EnumerableExtensions.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -76,11 +71,6 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Migrations\201307121506408_Initial.resx">
-      <DependentUpon>201307121506408_Initial.cs</DependentUpon>
-    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

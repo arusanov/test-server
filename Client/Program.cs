@@ -1,40 +1,57 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data.Entity.Migrations;
-using System.Linq;
+using System.Configuration;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Client.DAO;
+using NLog;
 
 namespace Client
 {
-    class Program
+    internal class Program
     {
         private static DataSetDbService _dbService;
+        private static readonly Logger Logger = LogManager.GetLogger("client");
 
-        static void Main(string[] args)
+
+        private static void Main(string[] args)
         {
             var dataSetType = DataSetType.Both;
             if (args.Length > 0)
             {
                 Enum.TryParse(args[0], true, out dataSetType);
             }
-            _dbService = new DataSetDbService();
-            Task.WaitAll(Init(dataSetType));
+            try
+            {
+                Init(dataSetType).Wait();
+            }
+            catch (AggregateException e)
+            {
+                Logger.ErrorException("Fatal error aggregate", e);
+                foreach (Exception innerException in e.InnerExceptions)
+                {
+                    Logger.ErrorException("Fatal error:", innerException);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.ErrorException("Fatal error", e);
+            }
+            Logger.Debug("Client work completed");
+            Console.ReadLine();
         }
 
         private static async Task Init(DataSetType dataSetType)
         {
+            _dbService = new DataSetDbService(ConfigurationManager.ConnectionStrings["DataSets"]);
             var client = new DataSetClient(new IPEndPoint(IPAddress.Loopback, 3333));
 
             client.OnDataSetLinesRecieved += client_OnDataSetLinesRecieved;
-            var sets = await client.QueryServer(dataSetType);
+            await client.QueryServer(dataSetType);
         }
 
-        static void client_OnDataSetLinesRecieved(DataSetType dataSetType, string lines)
+        private static void client_OnDataSetLinesRecieved(DataSetType dataSetType, string lines)
         {
-            _dbService.SaveDataSet(dataSetType, lines);
+            _dbService.SaveDataSet(dataSetType, lines).Wait();
         }
     }
 }

@@ -1,12 +1,17 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
 
 namespace Client.DAO.Models
 {
-    public class DetailsRecord
+    public class DetailsRecord : IEquatable<DetailsRecord>
     {
-        protected bool Equals(DetailsRecord other)
+        public long MasterRecordId { get; set; }
+
+        public string Name { get; set; }
+
+        public bool Equals(DetailsRecord other)
         {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
             return MasterRecordId == other.MasterRecordId && string.Equals(Name, other.Name);
         }
 
@@ -14,24 +19,26 @@ namespace Client.DAO.Models
         {
             unchecked
             {
-                return (MasterRecordId*397) ^ (Name != null ? Name.GetHashCode() : 0);
+                return (MasterRecordId.GetHashCode()*397) ^ (Name != null ? Name.GetHashCode() : 0);
             }
         }
 
-        [Key,Column(Order = 1)]
-        public int MasterRecordId { get; set; }
+        public static bool operator ==(DetailsRecord left, DetailsRecord right)
+        {
+            return Equals(left, right);
+        }
 
-        [ForeignKey("MasterRecordId")]
-        public virtual MasterRecord MasterRecord { get; set; }
+        public static bool operator !=(DetailsRecord left, DetailsRecord right)
+        {
+            return !Equals(left, right);
+        }
 
-        [Required,StringLength(400),Key,Column(Order = 2)]
-        public string Name { get; set; }
 
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
+            if (obj.GetType() != GetType()) return false;
             return Equals((DetailsRecord) obj);
         }
     }
