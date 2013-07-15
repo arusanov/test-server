@@ -15,11 +15,11 @@ namespace Client
         Both = 2
     }
 
-    public delegate void OnDataSetLinesRecievedDelegate(DataSetType dataSetType, string lines);
+    public delegate Task OnDataSetLinesRecievedDelegate(DataSetType dataSetType, string lines);
 
     public class DataSetClient
     {
-        private const int ReadBufferSize = 1024*30; //30kb line
+        private const int ReadBufferSize = 1024*60; //6kb line since sql stored proc can't take more
         private readonly IPEndPoint _ipEndPoint;
         private readonly Logger _logger = LogManager.GetLogger("client");
 
@@ -30,10 +30,10 @@ namespace Client
 
         public event OnDataSetLinesRecievedDelegate OnDataSetLinesRecieved = null;
 
-        protected virtual void OnOnDataSetLinesRecieved(DataSetType datasettype, string lines)
+        protected virtual async Task OnOnDataSetLinesRecieved(DataSetType datasettype, string lines)
         {
             OnDataSetLinesRecievedDelegate handler = OnDataSetLinesRecieved;
-            if (handler != null) handler(datasettype, lines);
+            if (handler != null) await handler(datasettype, lines);
         }
 
         public async Task QueryServer(DataSetType dataSetType)
@@ -63,8 +63,8 @@ namespace Client
         private async Task ReadDataBlock(DataSetType dataSetType, NetworkStream stream)
         {
             byte[] lengthBuffer = BitConverter.GetBytes((long) 0);
-            int readed = await stream.ReadAsync(lengthBuffer, 0, lengthBuffer.Length);
-            if (readed == lengthBuffer.Length)
+            int readBytes = await stream.ReadAsync(lengthBuffer, 0, lengthBuffer.Length);
+            if (readBytes == lengthBuffer.Length)
             {
                 //Start reading data
                 long readData = 0L;
@@ -73,16 +73,21 @@ namespace Client
                 var readLines = new StringBuilder();
                 do
                 {
-                    readData +=
+                    var readBufferSize =
                         await
                             stream.ReadAsync(dataBuffer, 0,
                                 (int) Math.Min(dataBuffer.Length, totalDataLength - readData));
+                    readData += readBufferSize;
                     //Parse lines
-                    readLines.Append(Encoding.UTF8.GetString(dataBuffer));
-                    int indexEndLine = LastIndexOf(readLines, Environment.NewLine);
+                    readLines.Append(Encoding.UTF8.GetString(dataBuffer, 0, readBufferSize));
+                    int indexEndLine = LastIndexOf(readLines, Environment.NewLine,readLines.Length);
+                    /*while (indexEndLine > 8000)
+                    {
+                        indexEndLine = LastIndexOf(readLines, Environment.NewLine, indexEndLine);
+                    }*/
                     if (indexEndLine > 0)
                     {
-                        OnOnDataSetLinesRecieved(dataSetType, readLines.ToString(0, indexEndLine));
+                        await OnOnDataSetLinesRecieved(dataSetType, readLines.ToString(0, indexEndLine));
                         indexEndLine += Environment.NewLine.Length;
                         readLines.Remove(0, indexEndLine);
                     }
@@ -90,12 +95,12 @@ namespace Client
             }
         }
 
-        private int LastIndexOf(StringBuilder stringBulder, string stringToFind)
+        private int LastIndexOf(StringBuilder stringBulder, string stringToFind, int fromIndex)
         {
             if (stringBulder == null) throw new ArgumentNullException("stringBulder");
             if (stringToFind == null) throw new ArgumentNullException("stringToFind");
 
-            for (int i = stringBulder.Length - stringToFind.Length; i >= 0; i--)
+            for (int i = fromIndex - stringToFind.Length; i >= 0; i--)
             {
                 if (!stringToFind.Where((t, j) => stringBulder[i + j] != t).Any())
                 {

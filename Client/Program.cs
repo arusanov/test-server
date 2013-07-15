@@ -49,9 +49,9 @@ namespace Client
             await client.QueryServer(dataSetType);
         }
 
-        private static void client_OnDataSetLinesRecieved(DataSetType dataSetType, string lines)
+        private static async Task client_OnDataSetLinesRecieved(DataSetType dataSetType, string lines)
         {
-            _dbService.SaveDataSet(dataSetType, lines).Wait();
+            await _dbService.SaveDataSet(dataSetType, lines);
         }
     }
 }

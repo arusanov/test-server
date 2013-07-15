@@ -55,8 +55,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DAO\DataSetDbService.cs" />
-    <Compile Include="DAO\Models\DetailsRecord.cs" />
-    <Compile Include="DAO\Models\MasterRecord.cs" />
     <Compile Include="DataSetClient.cs" />
     <Compile Include="EnumerableExtensions.cs" />
     <Compile Include="Program.cs" />
