@@ -57,11 +57,11 @@ namespace Server
                             await WriteData(stream, _dataSetReader.GetMasterRecords());
                             break;
                         case 1:
-                            //Write master
+                            //Write details
                             await WriteData(stream, _dataSetReader.GetDetailsRecords());
                             break;
                         case 2:
-                            //Write master
+                            //Write all
                             await WriteData(stream, _dataSetReader.GetMasterRecords());
                             await WriteData(stream, _dataSetReader.GetDetailsRecords());
                             break;

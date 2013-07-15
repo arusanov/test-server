@@ -41,7 +41,7 @@ namespace Client
             using (var client = new TcpClient())
             {
                 await client.ConnectAsync(_ipEndPoint.Address, _ipEndPoint.Port);
-                _logger.Debug("cleint connected. retrieving datasets {0}", dataSetType);
+                _logger.Debug("client connected. retrieving datasets {0}", dataSetType);
                 using (NetworkStream stream = client.GetStream())
                 {
                     await stream.WriteAsync(new[] {(byte) dataSetType}, 0, 1); //Write command
@@ -67,26 +67,26 @@ namespace Client
             if (readed == lengthBuffer.Length)
             {
                 //Start reading data
-                long readedData = 0L;
+                long readData = 0L;
                 long totalDataLength = BitConverter.ToInt64(lengthBuffer, 0);
                 var dataBuffer = new byte[ReadBufferSize];
-                var readedLines = new StringBuilder();
+                var readLines = new StringBuilder();
                 do
                 {
-                    readedData +=
+                    readData +=
                         await
                             stream.ReadAsync(dataBuffer, 0,
-                                (int) Math.Min(dataBuffer.Length, totalDataLength - readedData));
+                                (int) Math.Min(dataBuffer.Length, totalDataLength - readData));
                     //Parse lines
-                    readedLines.Append(Encoding.UTF8.GetString(dataBuffer));
-                    int indexEndLine = LastIndexOf(readedLines, Environment.NewLine);
+                    readLines.Append(Encoding.UTF8.GetString(dataBuffer));
+                    int indexEndLine = LastIndexOf(readLines, Environment.NewLine);
                     if (indexEndLine > 0)
                     {
-                        OnOnDataSetLinesRecieved(dataSetType, readedLines.ToString(0, indexEndLine));
+                        OnOnDataSetLinesRecieved(dataSetType, readLines.ToString(0, indexEndLine));
                         indexEndLine += Environment.NewLine.Length;
-                        readedLines.Remove(0, indexEndLine);
+                        readLines.Remove(0, indexEndLine);
                     }
-                } while (readedData < totalDataLength);
+                } while (readData < totalDataLength);
             }
         }
 
