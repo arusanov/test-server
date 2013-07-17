@@ -31,32 +31,39 @@ namespace DataSetGenerator
             WriteData(dir, level, detailslevel).Wait();
         }
 
-        private static async Task WriteData(string dir, int level, int detailslevel)
+        private static int GetUniqueId(int range, HashSet<int> existingIds, Random rnd)
         {
+            int id;
+            do
+            {
+                id = rnd.Next(range);
+            }
+            while (!existingIds.Add(id));
+            return id;
+        }
+
+        private static async Task WriteData(string dir, int level, int detailsLevel)
+        {
+            int masterId;
             var idsHash = new HashSet<int>();
             var rnd = new Random();
             using (StreamWriter fileMaster = File.CreateText(Path.Combine(dir, "master.txt")))
             {
                 for (int i = 0; i < level; i++)
                 {
-                    //Create and write master record
-                    int masterId;
-                    do
-                    {
-                        masterId = rnd.Next(level);
-                    } while (!idsHash.Add(masterId));
+                    masterId = GetUniqueId(level, idsHash, rnd);
                     await fileMaster.WriteLineAsync(string.Format("{0},\"{1}\"", masterId, Guid.NewGuid()));
                 }
                 Console.WriteLine("Master file created");
             }
             using (StreamWriter fileDetails = File.CreateText(Path.Combine(dir, "details.txt")))
             {
-                List<int> materIds = idsHash.ToList();
+                idsHash.Clear();
                 for (int i = 0; i < level; i++)
                 {
-                    //get any master id
-                    int masterId = materIds[rnd.Next(materIds.Count)];
-                    int detailsCurrentLevel = rnd.Next(detailslevel/3, detailslevel);
+                    masterId = GetUniqueId(level, idsHash, rnd);
+
+                    int detailsCurrentLevel = rnd.Next(detailsLevel/3, detailsLevel);
                     for (int j = 0; j < detailsCurrentLevel; j++)
                     {
                         string detailRecord = string.Format("{0},\"{1}-Details {2}\"", masterId, j, Guid.NewGuid());

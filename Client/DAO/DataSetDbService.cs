@@ -14,7 +14,6 @@ namespace Client.DAO
         private readonly DbProviderFactory _dbFactory;
         private readonly Logger _logger = LogManager.GetLogger("data");
 
-
         public DataSetDbService(ConnectionStringSettings connectionString)
         {
             _dbFactory = DbProviderFactories.GetFactory(connectionString.ProviderName);
@@ -38,94 +37,54 @@ namespace Client.DAO
         {
             if (dataSetType == DataSetType.Master)
             {
-                await SaveMasterDataSet(dataString);
+                await UpsertData(dataString, "[dbo].[spUpsertMaster]", (reader) => {
+                    string action = Convert.ToString(reader["Action"]);
+                    if (action == "UPDATE")
+                    {
+                        string id = Convert.ToString(reader["Id"]);
+                        _logger.Warn("Master record with Id={0} already exists", id);
+                    }                
+                });
             }
             else if (dataSetType == DataSetType.Details)
             {
-                await SaveDetailsDataSet(dataString);
-            }
-        }
-
-
-        private async Task SaveDetailsDataSet(string detailsRecords)
-        {
-            DbCommand queryCommand = _dbFactory.CreateCommand();
-            queryCommand.Parameters.Add(new SqlParameter
-            {
-                ParameterName = "@detailsString",
-                DbType = DbType.String,
-                Direction = ParameterDirection.Input,
-                Value = detailsRecords,
-            });
-            queryCommand.CommandText = "[dbo].[spUpsertDetails] @detailsString";
-            await DoPushDetails(queryCommand);
-        }
-
-        private async Task DoPushDetails(DbCommand queryCommand)
-        {
-            using (DbConnection connection = await GetConnection())
-            {
-                queryCommand.Connection = connection;
-                try
+                await UpsertData(dataString, "[dbo].[spUpsertDetails]", (reader) =>
                 {
-                    using (DbDataReader reader = await queryCommand.ExecuteReaderAsync())
+                    string id = Convert.ToString(reader["Id"]);
+                    string name = Convert.ToString(reader["Name"]);
+                    string action = Convert.ToString(reader["Action"]);
+                    if (action == "UPDATE")
                     {
-                        while (await reader.ReadAsync())
-                        {
-                            string id = Convert.ToString(reader["Id"]);
-                            string name = Convert.ToString(reader["Name"]);
-                            string action = Convert.ToString(reader["Action"]);
-                            if (action == "UPDATE")
-                            {
-                                _logger.Warn("details entry '{1}' with MasterId={0} already exists",
-                                    id, name);
-                            }
-                            else if (action == "NONE")
-                            {
-                                _logger.Warn("No master record found for details record '{1}' with MasterId={0}",
-                                    id, name);
-                            }
-                        }
+                        _logger.Warn("Details record with Id={0} already exists '{1}'", id, name);
                     }
-                }
-                catch (Exception e)
-                {
-                    _logger.ErrorException("Error reading data.", e);
-                }
+                    else if (action == "NONE")
+                    {
+                        _logger.Warn("Master record with Id={0} is missing for Details '{1}'", id, name);
+                    }
+                });
             }
         }
 
-        private async Task SaveMasterDataSet(string masterRecords)
+        private async Task UpsertData(string dataString, string spName, Action<DbDataReader> logProcessor)
         {
             DbCommand queryCommand = _dbFactory.CreateCommand();
-            queryCommand.Parameters.Add(new SqlParameter
-            {
-                ParameterName = "@masterString",
+            queryCommand.CommandText = spName + " @dataString";
+            queryCommand.Parameters.Add(new SqlParameter {
+                ParameterName = "@dataString",
                 DbType = DbType.String,
                 Direction = ParameterDirection.Input,
-                Value = masterRecords,
+                Value = dataString,
             });
-            queryCommand.CommandText = "[dbo].[spUpsertMaster] @masterString";
-            await DoPushMaster(queryCommand);
-        }
 
-        private async Task DoPushMaster(DbCommand queryCommand)
-        {
-            using (DbConnection connection = await GetConnection())
+            using (queryCommand.Connection = await GetConnection())
             {
-                queryCommand.Connection = connection;
                 try
                 {
                     using (DbDataReader reader = await queryCommand.ExecuteReaderAsync())
                     {
                         while (await reader.ReadAsync())
                         {
-                            string id = Convert.ToString(reader["Id"]);
-                            string action = Convert.ToString(reader["Action"]);
-                            if (action == "UPDATE")
-                            {
-                                _logger.Warn("master entry with id={0} already exists", id);
-                            }
+                            logProcessor(reader);
                         }
                     }
                 }

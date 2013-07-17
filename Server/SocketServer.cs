@@ -45,8 +45,8 @@ namespace Server
             var commandBuffer = new Byte[1];
             using (NetworkStream stream = client.GetStream())
             {
-                int readed = await stream.ReadAsync(commandBuffer, 0, commandBuffer.Length);
-                if (readed == commandBuffer.Length)
+                int read = await stream.ReadAsync(commandBuffer, 0, commandBuffer.Length);
+                if (read == commandBuffer.Length)
                 {
                     //We got correct command
                     _logger.Debug("client asked for set:{0}", commandBuffer[0]);
